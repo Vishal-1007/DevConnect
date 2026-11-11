@@ -1,0 +1,9 @@
+CREATE DATABASE devconnect_auth;
+CREATE DATABASE devconnect_user;
+CREATE DATABASE devconnect_chat;
+CREATE DATABASE devconnect_notification;
+CREATE DATABASE devconnect_payment;
+CREATE DATABASE devconnect_matching;
+CREATE DATABASE devconnect_mentor;
+CREATE DATABASE devconnect_analytics;
+CREATE DATABASE devconnect_admin;

@@ -1,0 +1,22 @@
+
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
+    client-secret: ${GOOGLE_CLIENT_SECRET:}
+    redirect-uri: ${GOOGLE_REDIRECT_URI:http://localhost:8089/api/recruiter/integrations/oauth/google/callback}
+    frontend-redirect-uri: ${GOOGLE_FRONTEND_REDIRECT_URI:http://localhost:5173/recruiter/oauth/callback}
+    calendar-scope: https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events email profile openid
+
+  zoom:
+    client-id: ${ZOOM_CLIENT_ID:}
+    client-secret: ${ZOOM_CLIENT_SECRET:}
+    redirect-uri: ${ZOOM_OAUTH_REDIRECT_URI:http://lvh.me:8089/api/recruiter/integrations/oauth/zoom/callback}
+    frontend-redirect-uri: ${ZOOM_OAUTH_FRONTEND_REDIRECT_URI:http://localhost:5173/recruiter/oauth/callback}
+    scopes: meeting:write:meeting meeting:update:meeting meeting:read:meeting user:read:user
+
+  microsoft:
+    client-id: ${MICROSOFT_CLIENT_ID:}
+    client-secret: ${MICROSOFT_CLIENT_SECRET:}
+    tenant: ${MICROSOFT_TENANT:common}
+    redirect-uri: ${MICROSOFT_REDIRECT_URI:http://localhost:8089/api/recruiter/integrations/oauth/teams/callback}
+    frontend-success-redirect-uri: http://localhost:5173/oauth/success
+    frontend-error-redirect-uri: http://localhost:5173/oauth/error

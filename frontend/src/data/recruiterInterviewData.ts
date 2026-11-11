@@ -1,0 +1,458 @@
+export type InterviewStatus = 'Upcoming' | 'Completed' | 'Cancelled'
+export type InterviewType = 'Technical Round' | 'HR Round' | 'Managerial Round' | 'Coding Test'
+export type MeetingPlatform = 'Google Meet' | 'Zoom' | 'Teams'
+
+export type InterviewFeedback = {
+  technical: number
+  communication: number
+  problemSolving: number
+  decision: 'Selected' | 'Hold' | 'Rejected'
+}
+
+export type RecruiterInterview = {
+  id: string
+  candidateId: string
+  candidateName: string
+  candidateAvatar: string
+  devScore: number
+  verified: boolean
+  skills: string[]
+  jobTitle: string
+  company: string
+  interviewType: InterviewType
+  date: string
+  time: string
+  durationMinutes: number
+  status: InterviewStatus
+  platform: MeetingPlatform
+  meetingLink?: string
+  interviewerName?: string
+  notes?: string
+  scheduledAt: string
+  aiInterviewScore?: number
+  codingScore?: number
+  mentorRating?: number
+  aiMatchPercent?: number
+  resumeUrl?: string
+  projectLinks?: { name: string; url: string }[]
+  recruiterNotes?: string
+  feedback?: InterviewFeedback
+  candidateEmail?: string
+  googleCalendarEventId?: string
+}
+
+export const INTERVIEW_TYPE_OPTIONS: InterviewType[] = [
+  'Technical Round',
+  'HR Round',
+  'Managerial Round',
+  'Coding Test',
+]
+
+export const MEETING_PLATFORMS: MeetingPlatform[] = ['Google Meet', 'Zoom', 'Teams']
+
+function todayKey(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function daysFromToday(offset: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + offset)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function isoAt(date: string, time: string): string {
+  const [y, m, d] = date.split('-').map(Number)
+  const [hh, mm] = time.split(':').map(Number)
+  return new Date(y, (m ?? 1) - 1, d ?? 1, hh ?? 0, mm ?? 0).toISOString()
+}
+
+const TODAY = todayKey()
+
+export const RECRUITER_INTERVIEWS: RecruiterInterview[] = [
+  {
+    id: 'int-1',
+    candidateId: 'c1',
+    candidateName: 'Vishal Gupta',
+    candidateAvatar: 'VG',
+    devScore: 925,
+    verified: true,
+    skills: ['Java', 'Spring Boot', 'React', 'AWS'],
+    jobTitle: 'Java Backend Developer',
+    company: 'Infosys',
+    interviewType: 'Technical Round',
+    date: TODAY,
+    time: '15:00',
+    durationMinutes: 60,
+    status: 'Upcoming',
+    platform: 'Google Meet',
+    meetingLink: 'https://meet.google.com/abc-defg-hij',
+    interviewerName: 'Rajesh Kumar',
+    scheduledAt: isoAt(TODAY, '15:00'),
+    aiInterviewScore: 94,
+    codingScore: 890,
+    mentorRating: 4.8,
+    aiMatchPercent: 96,
+    resumeUrl: '#',
+    projectLinks: [{ name: 'E-commerce Backend', url: '#' }],
+  },
+  {
+    id: 'int-2',
+    candidateId: 'c6',
+    candidateName: 'Karthik Reddy',
+    candidateAvatar: 'KR',
+    devScore: 878,
+    verified: true,
+    skills: ['Java', 'Spring Boot', 'MySQL', 'Docker'],
+    jobTitle: 'Backend Developer',
+    company: 'Infosys',
+    interviewType: 'HR Round',
+    date: TODAY,
+    time: '16:30',
+    durationMinutes: 45,
+    status: 'Upcoming',
+    platform: 'Google Meet',
+    meetingLink: 'https://meet.google.com/xyz-abcd-efg',
+    interviewerName: 'Anita Desai',
+    scheduledAt: isoAt(TODAY, '16:30'),
+    aiInterviewScore: 88,
+    codingScore: 860,
+    mentorRating: 4.6,
+    aiMatchPercent: 89,
+    resumeUrl: '#',
+  },
+  {
+    id: 'int-3',
+    candidateId: 'c2',
+    candidateName: 'Priya Sharma',
+    candidateAvatar: 'PS',
+    devScore: 898,
+    verified: true,
+    skills: ['React', 'Node.js', 'PostgreSQL', 'TypeScript'],
+    jobTitle: 'Full Stack Engineer',
+    company: 'Infosys',
+    interviewType: 'Technical Round',
+    date: daysFromToday(1),
+    time: '10:00',
+    durationMinutes: 60,
+    status: 'Upcoming',
+    platform: 'Zoom',
+    meetingLink: 'https://zoom.us/j/123456789',
+    interviewerName: 'Suresh Nair',
+    scheduledAt: isoAt(daysFromToday(1), '10:00'),
+    aiInterviewScore: 88,
+    codingScore: 875,
+    mentorRating: 4.7,
+    aiMatchPercent: 91,
+    resumeUrl: '#',
+    projectLinks: [{ name: 'SaaS Dashboard', url: '#' }],
+  },
+  {
+    id: 'int-4',
+    candidateId: 'c3',
+    candidateName: 'Arjun Mehta',
+    candidateAvatar: 'AM',
+    devScore: 872,
+    verified: true,
+    skills: ['Java', 'Spring Boot', 'MySQL', 'Docker'],
+    jobTitle: 'Backend Developer',
+    company: 'Infosys',
+    interviewType: 'Coding Test',
+    date: daysFromToday(2),
+    time: '14:00',
+    durationMinutes: 90,
+    status: 'Upcoming',
+    platform: 'Teams',
+    interviewerName: 'Meera Iyer',
+    scheduledAt: isoAt(daysFromToday(2), '14:00'),
+    aiInterviewScore: 86,
+    codingScore: 850,
+    mentorRating: 4.6,
+    aiMatchPercent: 88,
+    resumeUrl: '#',
+  },
+  {
+    id: 'int-5',
+    candidateId: 'c4',
+    candidateName: 'Sneha Reddy',
+    candidateAvatar: 'SR',
+    devScore: 845,
+    verified: true,
+    skills: ['React', 'Next.js', 'Tailwind', 'GraphQL'],
+    jobTitle: 'Frontend Developer',
+    company: 'Infosys',
+    interviewType: 'Managerial Round',
+    date: daysFromToday(3),
+    time: '11:30',
+    durationMinutes: 45,
+    status: 'Upcoming',
+    platform: 'Google Meet',
+    interviewerName: 'Vikram Singh',
+    scheduledAt: isoAt(daysFromToday(3), '11:30'),
+    aiInterviewScore: 82,
+    codingScore: 820,
+    mentorRating: 4.5,
+    aiMatchPercent: 84,
+    resumeUrl: '#',
+  },
+  {
+    id: 'int-6',
+    candidateId: 'c1',
+    candidateName: 'Vishal Gupta',
+    candidateAvatar: 'VG',
+    devScore: 925,
+    verified: true,
+    skills: ['Java', 'Spring Boot', 'React', 'AWS'],
+    jobTitle: 'Java Backend Developer',
+    company: 'Infosys',
+    interviewType: 'HR Round',
+    date: daysFromToday(-5),
+    time: '15:00',
+    durationMinutes: 45,
+    status: 'Completed',
+    platform: 'Google Meet',
+    interviewerName: 'Anita Desai',
+    scheduledAt: isoAt(daysFromToday(-5), '15:00'),
+    aiInterviewScore: 94,
+    codingScore: 890,
+    mentorRating: 4.8,
+    aiMatchPercent: 96,
+    resumeUrl: '#',
+    recruiterNotes: 'Strong communication and culture fit.',
+    feedback: { technical: 5, communication: 4, problemSolving: 5, decision: 'Selected' },
+  },
+  {
+    id: 'int-7',
+    candidateId: 'c2',
+    candidateName: 'Priya Sharma',
+    candidateAvatar: 'PS',
+    devScore: 898,
+    verified: true,
+    skills: ['React', 'Node.js', 'PostgreSQL', 'TypeScript'],
+    jobTitle: 'Full Stack Engineer',
+    company: 'Infosys',
+    interviewType: 'Technical Round',
+    date: daysFromToday(-7),
+    time: '10:30',
+    durationMinutes: 60,
+    status: 'Completed',
+    platform: 'Zoom',
+    interviewerName: 'Rajesh Kumar',
+    scheduledAt: isoAt(daysFromToday(-7), '10:30'),
+    aiInterviewScore: 88,
+    codingScore: 875,
+    mentorRating: 4.7,
+    aiMatchPercent: 91,
+    feedback: { technical: 4, communication: 5, problemSolving: 4, decision: 'Selected' },
+  },
+  {
+    id: 'int-8',
+    candidateId: 'c3',
+    candidateName: 'Arjun Mehta',
+    candidateAvatar: 'AM',
+    devScore: 872,
+    verified: true,
+    skills: ['Java', 'Spring Boot', 'MySQL', 'Docker'],
+    jobTitle: 'Backend Developer',
+    company: 'Infosys',
+    interviewType: 'Coding Test',
+    date: daysFromToday(-10),
+    time: '14:00',
+    durationMinutes: 90,
+    status: 'Completed',
+    platform: 'Teams',
+    interviewerName: 'Suresh Nair',
+    scheduledAt: isoAt(daysFromToday(-10), '14:00'),
+    aiInterviewScore: 86,
+    codingScore: 850,
+    mentorRating: 4.6,
+    aiMatchPercent: 88,
+    feedback: { technical: 4, communication: 3, problemSolving: 4, decision: 'Hold' },
+  },
+  {
+    id: 'int-9',
+    candidateId: 'c4',
+    candidateName: 'Sneha Reddy',
+    candidateAvatar: 'SR',
+    devScore: 845,
+    verified: true,
+    skills: ['React', 'Next.js', 'Tailwind', 'GraphQL'],
+    jobTitle: 'Frontend Developer',
+    company: 'Infosys',
+    interviewType: 'Technical Round',
+    date: daysFromToday(-12),
+    time: '11:00',
+    durationMinutes: 60,
+    status: 'Completed',
+    platform: 'Google Meet',
+    interviewerName: 'Meera Iyer',
+    scheduledAt: isoAt(daysFromToday(-12), '11:00'),
+    aiInterviewScore: 82,
+    codingScore: 820,
+    mentorRating: 4.5,
+    aiMatchPercent: 84,
+    feedback: { technical: 4, communication: 4, problemSolving: 3, decision: 'Hold' },
+  },
+  {
+    id: 'int-10',
+    candidateId: 'c5',
+    candidateName: 'Rahul Verma',
+    candidateAvatar: 'RV',
+    devScore: 831,
+    verified: false,
+    skills: ['AWS', 'Kubernetes', 'CI/CD', 'Terraform'],
+    jobTitle: 'DevOps Engineer',
+    company: 'Infosys',
+    interviewType: 'Technical Round',
+    date: daysFromToday(-14),
+    time: '16:00',
+    durationMinutes: 60,
+    status: 'Completed',
+    platform: 'Zoom',
+    interviewerName: 'Vikram Singh',
+    scheduledAt: isoAt(daysFromToday(-14), '16:00'),
+    aiInterviewScore: 80,
+    codingScore: 810,
+    mentorRating: 4.4,
+    aiMatchPercent: 82,
+    feedback: { technical: 3, communication: 4, problemSolving: 3, decision: 'Rejected' },
+  },
+  {
+    id: 'int-11',
+    candidateId: 'c6',
+    candidateName: 'Karthik Reddy',
+    candidateAvatar: 'KR',
+    devScore: 878,
+    verified: true,
+    skills: ['Java', 'Spring Boot', 'MySQL', 'Docker'],
+    jobTitle: 'Backend Developer',
+    company: 'Infosys',
+    interviewType: 'Managerial Round',
+    date: daysFromToday(-18),
+    time: '10:00',
+    durationMinutes: 45,
+    status: 'Completed',
+    platform: 'Google Meet',
+    interviewerName: 'Anita Desai',
+    scheduledAt: isoAt(daysFromToday(-18), '10:00'),
+    aiInterviewScore: 88,
+    codingScore: 860,
+    mentorRating: 4.6,
+    aiMatchPercent: 89,
+    feedback: { technical: 4, communication: 5, problemSolving: 4, decision: 'Selected' },
+  },
+  {
+    id: 'int-12',
+    candidateId: 'c2',
+    candidateName: 'Priya Sharma',
+    candidateAvatar: 'PS',
+    devScore: 898,
+    verified: true,
+    skills: ['React', 'Node.js', 'PostgreSQL', 'TypeScript'],
+    jobTitle: 'Full Stack Engineer',
+    company: 'Infosys',
+    interviewType: 'HR Round',
+    date: daysFromToday(-20),
+    time: '15:30',
+    durationMinutes: 45,
+    status: 'Completed',
+    platform: 'Teams',
+    interviewerName: 'Rajesh Kumar',
+    scheduledAt: isoAt(daysFromToday(-20), '15:30'),
+    aiInterviewScore: 88,
+    codingScore: 875,
+    mentorRating: 4.7,
+    aiMatchPercent: 91,
+    feedback: { technical: 5, communication: 5, problemSolving: 4, decision: 'Selected' },
+  },
+  {
+    id: 'int-13',
+    candidateId: 'c3',
+    candidateName: 'Arjun Mehta',
+    candidateAvatar: 'AM',
+    devScore: 872,
+    verified: true,
+    skills: ['Java', 'Spring Boot', 'MySQL', 'Docker'],
+    jobTitle: 'Backend Developer',
+    company: 'Infosys',
+    interviewType: 'Technical Round',
+    date: daysFromToday(-22),
+    time: '11:00',
+    durationMinutes: 60,
+    status: 'Completed',
+    platform: 'Zoom',
+    interviewerName: 'Suresh Nair',
+    scheduledAt: isoAt(daysFromToday(-22), '11:00'),
+    aiInterviewScore: 86,
+    codingScore: 850,
+    mentorRating: 4.6,
+    aiMatchPercent: 88,
+    feedback: { technical: 4, communication: 4, problemSolving: 4, decision: 'Selected' },
+  },
+  {
+    id: 'int-14',
+    candidateId: 'c5',
+    candidateName: 'Rahul Verma',
+    candidateAvatar: 'RV',
+    devScore: 831,
+    verified: false,
+    skills: ['AWS', 'Kubernetes', 'CI/CD', 'Terraform'],
+    jobTitle: 'DevOps Engineer',
+    company: 'Infosys',
+    interviewType: 'Coding Test',
+    date: daysFromToday(-3),
+    time: '14:30',
+    durationMinutes: 90,
+    status: 'Cancelled',
+    platform: 'Google Meet',
+    interviewerName: 'Meera Iyer',
+    scheduledAt: isoAt(daysFromToday(-3), '14:30'),
+    notes: 'Candidate requested reschedule',
+    aiInterviewScore: 80,
+    codingScore: 810,
+    mentorRating: 4.4,
+    aiMatchPercent: 82,
+  },
+  {
+    id: 'int-15',
+    candidateId: 'c4',
+    candidateName: 'Sneha Reddy',
+    candidateAvatar: 'SR',
+    devScore: 845,
+    verified: true,
+    skills: ['React', 'Next.js', 'Tailwind', 'GraphQL'],
+    jobTitle: 'Frontend Developer',
+    company: 'Infosys',
+    interviewType: 'HR Round',
+    date: daysFromToday(-8),
+    time: '10:00',
+    durationMinutes: 45,
+    status: 'Cancelled',
+    platform: 'Teams',
+    interviewerName: 'Vikram Singh',
+    scheduledAt: isoAt(daysFromToday(-8), '10:00'),
+    notes: 'Position put on hold',
+    aiInterviewScore: 82,
+    codingScore: 820,
+    mentorRating: 4.5,
+    aiMatchPercent: 84,
+  },
+]
+
+export const INTERVIEW_STATS = {
+  total: 15,
+  totalGrowth: '+18% from last month',
+  upcoming: 5,
+  nextUpLabel: 'Today, 3:00 PM',
+  completed: 8,
+  completedLabel: 'This month',
+  cancelled: 2,
+  cancelledLabel: 'This month',
+}
+
+export const INTERVIEW_TYPE_BREAKDOWN = [
+  { type: 'Technical Round' as InterviewType, count: 8, percent: 53 },
+  { type: 'HR Round' as InterviewType, count: 4, percent: 27 },
+  { type: 'Managerial Round' as InterviewType, count: 2, percent: 13 },
+  { type: 'Coding Test' as InterviewType, count: 1, percent: 7 },
+]

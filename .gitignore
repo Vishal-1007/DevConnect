@@ -1,0 +1,9 @@
+target/
+frontend/node_modules/
+frontend/dist/
+deploy/aws/.env
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.iml

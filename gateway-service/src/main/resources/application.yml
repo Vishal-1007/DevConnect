@@ -1,0 +1,122 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      routes:
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/api/auth/**
+        - id: user-coding-problems
+          uri: ${USER_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/problems/**,/api/coding-challenges/**,/api/practice/**
+        - id: user-admin-coding-problems
+          uri: ${USER_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/admin/problems/**,/api/admin/coding-challenges/**
+        - id: user-mentor-coding-problems
+          uri: ${USER_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/mentors/coding-challenges/**,/api/mentors/problems/**
+        - id: user-service
+          uri: ${USER_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/users/**,/api/pair/**,/api/pair-programming/**,/api/files/**
+        - id: user-community-uploads
+          uri: ${USER_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/uploads/community/**
+        - id: video-rooms-alias
+          uri: ${USER_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/api/video-rooms/**
+        - id: chat-service-rest
+          uri: ${CHAT_SERVICE_URI:http://localhost:8083}
+          predicates:
+            - Path=/api/chats/**
+        - id: chat-service-websocket
+          uri: ${CHAT_SERVICE_WS_URI:ws://localhost:8083}
+          predicates:
+            - Path=/ws/chat/**
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8084}
+          predicates:
+            - Path=/api/notifications/**
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URI:http://localhost:8089}
+          predicates:
+            - Path=/api/payments/**
+        - id: recruiter-integrations
+          uri: ${PAYMENT_SERVICE_URI:http://localhost:8089}
+          predicates:
+            - Path=/api/recruiter/**
+        - id: matching-service
+          uri: ${MATCHING_SERVICE_URI:http://localhost:8085}
+          predicates:
+            - Path=/api/matching/**
+        - id: mentor-service
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/mentors/**
+        - id: mentor-video-stream
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/videos/**
+        - id: mentor-uploads
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/uploads/**
+        - id: analytics-service
+          uri: ${ANALYTICS_SERVICE_URI:http://localhost:8087}
+          predicates:
+            - Path=/api/analytics/**
+        - id: mentor-marketplace
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/marketplace/**
+        - id: mentor-mentorship
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/mentorship/**,/api/mock-interviews/**,/api/mock-interviewers/**,/api/ai-interview/**,/api/ai-review/**,/api/payment/code-review/**
+        - id: mentor-mentorship-inbox
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/mentor/**
+        - id: mentor-admin-applications
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/admin/mentor-applications/**
+        - id: mentor-admin-mentors
+          uri: ${MENTOR_SERVICE_URI:http://localhost:8086}
+          predicates:
+            - Path=/api/admin/mentors/**
+        - id: admin-service
+          uri: ${ADMIN_SERVICE_URI:http://localhost:8088}
+          predicates:
+            - Path=/api/admin/**
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true

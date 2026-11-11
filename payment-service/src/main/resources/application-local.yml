@@ -1,0 +1,32 @@
+# Local dev without Docker — run: set SPRING_PROFILES_ACTIVE=local && mvn -pl payment-service spring-boot:run
+spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:devconnect_payment;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  h2:
+    console:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+
+app:
+  kafka:
+    enabled: ${KAFKA_ENABLED:false}
+
+# OAuth credentials are read from environment variables (see repo root .env.example):
+#   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+#   ZOOM_CLIENT_ID, ZOOM_CLIENT_SECRET
+#   MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET
+# Set them in your IDE run configuration or shell before starting payment-service.
+# Google Cloud Console redirect URI must match:
+#   http://localhost:8089/api/recruiter/integrations/oauth/google/callback

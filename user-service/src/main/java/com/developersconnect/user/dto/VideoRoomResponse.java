@@ -1,0 +1,50 @@
+package com.developersconnect.user.dto;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+
+/** API payload for a video room, including join-approval state for the viewer. */
+public record VideoRoomResponse(
+    UUID id,
+    UUID hostId,
+    String hostDisplayName,
+    String hostRole,
+    String title,
+    String description,
+    String category,
+    String roomType,
+    String useCase,
+    UUID parentRoomId,
+    String status,
+    int maxParticipants,
+    long participantCount,
+    boolean joinedByMe,
+    boolean full,
+    boolean chatEnabled,
+    boolean screenShareEnabled,
+    boolean breakoutEnabled,
+    boolean featured,
+    int featuredOrder,
+    String visibility,
+    UUID moderatorId,
+    String moderatorDisplayName,
+    Set<String> tags,
+    List<VideoRoomParticipantResponse> participants,
+    List<VideoRoomResponse> breakouts,
+    Instant createdAt,
+    Instant endedAt,
+    String roomCode,
+    String joinUrl,
+    String joinPath,
+    Instant expiresAt,
+    boolean premiumRoom,
+    Long remainingSeconds,
+    boolean viewerHasVideoRoomPremium,
+    boolean freeTierRoom,
+    Instant nextFreeRoomAvailableAt,
+    boolean expiredDueToTimeLimit,
+    String viewerJoinStatus,
+    List<VideoRoomParticipantResponse> waitingParticipants
+) {}

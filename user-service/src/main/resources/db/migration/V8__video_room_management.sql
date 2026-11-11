@@ -1,0 +1,13 @@
+ALTER TABLE video_rooms ADD COLUMN IF NOT EXISTS room_type VARCHAR(32) NOT NULL DEFAULT 'public';
+ALTER TABLE video_rooms ADD COLUMN IF NOT EXISTS use_case VARCHAR(32) NOT NULL DEFAULT 'community';
+ALTER TABLE video_rooms ADD COLUMN IF NOT EXISTS parent_room_id UUID REFERENCES video_rooms(id) ON DELETE CASCADE;
+ALTER TABLE video_rooms ADD COLUMN IF NOT EXISTS chat_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE video_rooms ADD COLUMN IF NOT EXISTS screen_share_enabled BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE video_rooms ADD COLUMN IF NOT EXISTS breakout_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE video_room_participants ADD COLUMN IF NOT EXISTS muted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE video_room_participants ADD COLUMN IF NOT EXISTS can_speak BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE video_room_participants ADD COLUMN IF NOT EXISTS hand_raised BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE INDEX IF NOT EXISTS idx_video_rooms_room_type ON video_rooms(room_type);
+CREATE INDEX IF NOT EXISTS idx_video_rooms_parent ON video_rooms(parent_room_id);

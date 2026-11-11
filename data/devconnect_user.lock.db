@@ -1,0 +1,6 @@
+#FileLock
+#Fri Oct 30 10:06:30 IST 2026
+hostName=Its-Locked
+id=1a18b1853345b4bfbfd16ad5aa5457b405b6fde226a
+method=file
+server=10.245.187.1\:53874

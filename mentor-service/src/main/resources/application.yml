@@ -1,0 +1,59 @@
+server:
+  port: 8086
+
+spring:
+  flyway:
+    enabled: false
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 520MB
+  datasource:
+    url: ${MENTOR_DB_URL:jdbc:postgresql://localhost:5432/devconnect_mentor}
+    username: ${MENTOR_DB_USERNAME:postgres}
+    password: ${MENTOR_DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+app:
+  jwt:
+    issuer: ${JWT_ISSUER:devconnect}
+    access-token-secret: ${JWT_ACCESS_TOKEN_SECRET:change-me-change-me-change-me-change-me}
+  payment-service:
+    base-url: ${PAYMENT_SERVICE_URL:http://localhost:8089}
+    internal-api-key: ${PAYMENT_INTERNAL_API_KEY:devconnect-internal}
+  user-service:
+    base-url: ${USER_SERVICE_URL:http://localhost:8082}
+    internal-api-key: ${NOTIFICATION_INTERNAL_API_KEY:devconnect-internal}
+  notification-service:
+    base-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8084}
+    internal-api-key: ${NOTIFICATION_INTERNAL_API_KEY:devconnect-internal}
+  stream-media:
+    upload-dir: ${STREAM_UPLOAD_DIR:uploads}
+    max-video-bytes: ${STREAM_MAX_VIDEO_BYTES:524288000}
+  ollama:
+    base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+    model: ${OLLAMA_MODEL:llama3.1}
+    timeout-seconds: ${OLLAMA_TIMEOUT_SECONDS:120}
+  ai-review:
+    free-daily-limit: ${AI_REVIEW_FREE_DAILY_LIMIT:2}
+    paid-review-price-inr: ${AI_REVIEW_PAID_PRICE_INR:50}
+    usage-zone: ${AI_REVIEW_USAGE_ZONE:Asia/Kolkata}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-1.5-flash}
+      timeout-seconds: ${GEMINI_TIMEOUT_SECONDS:90}

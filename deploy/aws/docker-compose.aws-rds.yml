@@ -1,0 +1,15 @@
+# Overlay: use Amazon RDS instead of the local postgres container.
+#
+# 1. Create RDS PostgreSQL and run docker/init-databases.sql on it.
+# 2. Set in deploy/aws/.env:
+#      AUTH_DB_URL=jdbc:postgresql://YOUR_RDS_HOST:5432/devconnect_auth?sslmode=require
+#      USER_DB_URL=...
+#      (all *_DB_URL vars)
+# 3. Start WITHOUT local-db profile:
+#      docker compose -f deploy/aws/docker-compose.aws.yml \
+#        -f deploy/aws/docker-compose.aws-rds.yml \
+#        --env-file deploy/aws/.env up -d --build
+
+services:
+  postgres:
+    profiles: [disabled-rds]

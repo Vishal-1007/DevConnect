@@ -1,0 +1,11 @@
+spring:
+  profiles:
+    active: local
+
+app:
+  jwt:
+    issuer: devconnect
+    access-token-secret: test-secret-test-secret-test-secret-test
+    refresh-token-secret: test-secret-test-secret-test-secret-test
+    access-token-ttl-seconds: 900
+    refresh-token-ttl-seconds: 1209600

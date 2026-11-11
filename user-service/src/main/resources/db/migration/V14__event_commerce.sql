@@ -1,0 +1,9 @@
+ALTER TABLE community_events ADD COLUMN IF NOT EXISTS thumbnail_url VARCHAR(512);
+ALTER TABLE community_events ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE NOT NULL;
+ALTER TABLE community_events ADD COLUMN IF NOT EXISTS price_inr_cents INT DEFAULT 0 NOT NULL;
+ALTER TABLE community_events ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE NOT NULL;
+ALTER TABLE community_events ADD COLUMN IF NOT EXISTS topics_covered VARCHAR(2000);
+ALTER TABLE community_events ADD COLUMN IF NOT EXISTS requirements VARCHAR(2000);
+
+ALTER TABLE community_event_registrations ADD COLUMN IF NOT EXISTS payment_status VARCHAR(16) DEFAULT 'free' NOT NULL;
+ALTER TABLE community_event_registrations ADD COLUMN IF NOT EXISTS amount_paid_cents INT DEFAULT 0 NOT NULL;

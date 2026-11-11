@@ -1,0 +1,256 @@
+name: devconnect
+
+x-jwt-env: &jwt-env
+  JWT_ISSUER: devconnect
+  JWT_ACCESS_TOKEN_SECRET: ${JWT_ACCESS_TOKEN_SECRET:-local-dev-only-change-in-production-32chars}
+  JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET:-local-dev-only-change-in-production-32chars}
+
+x-db-env: &db-env
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      <<: *db-env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  kafka:
+    image: bitnami/kafka:3.7.0
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: auth-service
+    environment:
+      <<: *jwt-env
+      SPRING_PROFILES_ACTIVE: prod
+      AUTH_DB_URL: jdbc:postgresql://postgres:5432/devconnect_auth
+      AUTH_DB_USERNAME: postgres
+      AUTH_DB_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: user-service
+    environment:
+      <<: *jwt-env
+      SPRING_PROFILES_ACTIVE: prod
+      USER_DB_URL: jdbc:postgresql://postgres:5432/devconnect_user
+      USER_DB_USERNAME: postgres
+      USER_DB_PASSWORD: postgres
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: chat-service
+    environment:
+      <<: *jwt-env
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_FLYWAY_ENABLED: "false"
+      CHAT_DB_URL: jdbc:postgresql://postgres:5432/devconnect_chat
+      CHAT_DB_USERNAME: postgres
+      CHAT_DB_PASSWORD: postgres
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: notification-service
+    environment:
+      <<: *jwt-env
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_FLYWAY_ENABLED: "false"
+      NOTIFICATION_DB_URL: jdbc:postgresql://postgres:5432/devconnect_notification
+      NOTIFICATION_DB_USERNAME: postgres
+      NOTIFICATION_DB_PASSWORD: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: payment-service
+    environment:
+      <<: *jwt-env
+      SPRING_PROFILES_ACTIVE: prod
+      PAYMENT_DB_URL: jdbc:postgresql://postgres:5432/devconnect_payment
+      PAYMENT_DB_USERNAME: postgres
+      PAYMENT_DB_PASSWORD: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_ENABLED: "true"
+      PAYMENT_GATEWAY_PROVIDER: ${PAYMENT_GATEWAY_PROVIDER:-mock}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  matching-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: matching-service
+    environment:
+      <<: *jwt-env
+      SPRING_PROFILES_ACTIVE: prod
+      MATCHING_DB_URL: jdbc:postgresql://postgres:5432/devconnect_matching
+      MATCHING_DB_USERNAME: postgres
+      MATCHING_DB_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mentor-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mentor-service
+    environment:
+      <<: *jwt-env
+      SPRING_PROFILES_ACTIVE: prod
+      MENTOR_DB_URL: jdbc:postgresql://postgres:5432/devconnect_mentor
+      MENTOR_DB_USERNAME: postgres
+      MENTOR_DB_PASSWORD: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  analytics-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: analytics-service
+    restart: unless-stopped
+
+  admin-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: admin-service
+    restart: unless-stopped
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: gateway-service
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      AUTH_SERVICE_URI: http://auth-service:8081
+      USER_SERVICE_URI: http://user-service:8082
+      CHAT_SERVICE_URI: http://chat-service:8083
+      CHAT_SERVICE_WS_URI: ws://chat-service:8083
+      NOTIFICATION_SERVICE_URI: http://notification-service:8084
+      PAYMENT_SERVICE_URI: http://payment-service:8089
+      MATCHING_SERVICE_URI: http://matching-service:8085
+      MENTOR_SERVICE_URI: http://mentor-service:8086
+      ANALYTICS_SERVICE_URI: http://analytics-service:8087
+      ADMIN_SERVICE_URI: http://admin-service:8088
+    depends_on:
+      auth-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      matching-service:
+        condition: service_started
+      mentor-service:
+        condition: service_started
+      analytics-service:
+        condition: service_started
+      admin-service:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,0 +1,339 @@
+# DevConnect — AWS EC2 deployment (m7i-flex.large / 8GB recommended)
+#
+# Usage on EC2:
+#   cd /opt/devconnect
+#   cp deploy/aws/.env.example deploy/aws/.env   # edit secrets
+#   docker compose -f deploy/aws/docker-compose.aws.yml --env-file deploy/aws/.env up -d --build
+#
+# With Ollama AI (needs extra RAM):
+#   docker compose -f deploy/aws/docker-compose.aws.yml --env-file deploy/aws/.env --profile ai up -d --build
+#
+# With RDS instead of local Postgres:
+#   docker compose -f deploy/aws/docker-compose.aws.yml -f deploy/aws/docker-compose.aws-rds.yml --env-file deploy/aws/.env up -d --build
+
+name: devconnect-aws
+
+x-jwt-env: &jwt-env
+  JWT_ISSUER: ${JWT_ISSUER:-devconnect}
+  JWT_ACCESS_TOKEN_SECRET: ${JWT_ACCESS_TOKEN_SECRET:?Set JWT_ACCESS_TOKEN_SECRET in deploy/aws/.env}
+  JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET:?Set JWT_REFRESH_TOKEN_SECRET in deploy/aws/.env}
+
+x-java-env: &java-env
+  JAVA_OPTS: ${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -Xms128m}
+  SPRING_PROFILES_ACTIVE: prod
+
+x-db-creds: &db-creds
+  AUTH_DB_USERNAME: ${AUTH_DB_USERNAME:-postgres}
+  AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+  USER_DB_USERNAME: ${USER_DB_USERNAME:-postgres}
+  USER_DB_PASSWORD: ${USER_DB_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+  CHAT_DB_USERNAME: ${CHAT_DB_USERNAME:-postgres}
+  CHAT_DB_PASSWORD: ${CHAT_DB_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+  NOTIFICATION_DB_USERNAME: ${NOTIFICATION_DB_USERNAME:-postgres}
+  NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+  PAYMENT_DB_USERNAME: ${PAYMENT_DB_USERNAME:-postgres}
+  PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+  MATCHING_DB_USERNAME: ${MATCHING_DB_USERNAME:-postgres}
+  MATCHING_DB_PASSWORD: ${MATCHING_DB_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+  MENTOR_DB_USERNAME: ${MENTOR_DB_USERNAME:-postgres}
+  MENTOR_DB_PASSWORD: ${MENTOR_DB_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+
+services:
+  postgres:
+    profiles: [local-db]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/aws/.env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../docker/init-databases.sql:/docker-entrypoint-initdb.d/01-init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+  ollama:
+    profiles: [ai]
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: auth-service
+    environment:
+      <<: [*jwt-env, *java-env, *db-creds]
+      AUTH_DB_URL: ${AUTH_DB_URL:-jdbc:postgresql://postgres:5432/devconnect_auth}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  user-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: user-service
+    environment:
+      <<: [*jwt-env, *java-env, *db-creds]
+      USER_DB_URL: ${USER_DB_URL:-jdbc:postgresql://postgres:5432/devconnect_user}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  chat-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: chat-service
+    environment:
+      <<: [*jwt-env, *java-env, *db-creds]
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_FLYWAY_ENABLED: "false"
+      CHAT_DB_URL: ${CHAT_DB_URL:-jdbc:postgresql://postgres:5432/devconnect_chat}
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: notification-service
+    environment:
+      <<: [*jwt-env, *java-env, *db-creds]
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_FLYWAY_ENABLED: "false"
+      NOTIFICATION_DB_URL: ${NOTIFICATION_DB_URL:-jdbc:postgresql://postgres:5432/devconnect_notification}
+      KAFKA_ENABLED: ${KAFKA_ENABLED:-false}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  payment-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: payment-service
+    environment:
+      <<: [*jwt-env, *java-env, *db-creds]
+      PAYMENT_DB_URL: ${PAYMENT_DB_URL:-jdbc:postgresql://postgres:5432/devconnect_payment}
+      KAFKA_ENABLED: ${KAFKA_ENABLED:-false}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      PAYMENT_GATEWAY_PROVIDER: ${PAYMENT_GATEWAY_PROVIDER:-mock}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_OAUTH_REDIRECT_URI: ${GOOGLE_OAUTH_REDIRECT_URI:-}
+      GOOGLE_OAUTH_FRONTEND_REDIRECT: ${GOOGLE_OAUTH_FRONTEND_REDIRECT:-}
+      ZOOM_CLIENT_ID: ${ZOOM_CLIENT_ID:-}
+      ZOOM_CLIENT_SECRET: ${ZOOM_CLIENT_SECRET:-}
+      ZOOM_OAUTH_REDIRECT_URI: ${ZOOM_OAUTH_REDIRECT_URI:-}
+      MICROSOFT_CLIENT_ID: ${MICROSOFT_CLIENT_ID:-}
+      MICROSOFT_CLIENT_SECRET: ${MICROSOFT_CLIENT_SECRET:-}
+      MICROSOFT_TENANT: ${MICROSOFT_TENANT:-common}
+      MICROSOFT_OAUTH_REDIRECT_URI: ${MICROSOFT_OAUTH_REDIRECT_URI:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  matching-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: matching-service
+    environment:
+      <<: [*jwt-env, *java-env, *db-creds]
+      MATCHING_DB_URL: ${MATCHING_DB_URL:-jdbc:postgresql://postgres:5432/devconnect_matching}
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  mentor-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mentor-service
+    environment:
+      <<: [*jwt-env, *java-env, *db-creds]
+      MENTOR_DB_URL: ${MENTOR_DB_URL:-jdbc:postgresql://postgres:5432/devconnect_mentor}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-120}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      PAYMENT_SERVICE_URL: http://payment-service:8089
+      USER_SERVICE_URL: http://user-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8084
+    volumes:
+      - mentor_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  analytics-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: analytics-service
+    environment:
+      <<: [*java-env]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  admin-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: admin-service
+    environment:
+      <<: [*java-env]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  gateway-service:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: gateway-service
+    environment:
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost}
+      AUTH_SERVICE_URI: http://auth-service:8081
+      USER_SERVICE_URI: http://user-service:8082
+      CHAT_SERVICE_URI: http://chat-service:8083
+      CHAT_SERVICE_WS_URI: ws://chat-service:8083
+      NOTIFICATION_SERVICE_URI: http://notification-service:8084
+      PAYMENT_SERVICE_URI: http://payment-service:8089
+      MATCHING_SERVICE_URI: http://matching-service:8085
+      MENTOR_SERVICE_URI: http://mentor-service:8086
+      ANALYTICS_SERVICE_URI: http://analytics-service:8087
+      ADMIN_SERVICE_URI: http://admin-service:8088
+    depends_on:
+      - auth-service
+      - user-service
+      - chat-service
+      - notification-service
+      - payment-service
+      - matching-service
+      - mentor-service
+      - analytics-service
+      - admin-service
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  nginx:
+    build:
+      context: ../..
+      dockerfile: deploy/aws/Dockerfile.nginx
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway-service
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+volumes:
+  postgres_data:
+  mentor_uploads:
+  ollama_data:

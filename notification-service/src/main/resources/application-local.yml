@@ -1,0 +1,29 @@
+# Local dev without Docker (H2 in-memory). Requires h2 on runtime classpath (see pom.xml).
+# From repo root:
+#   mvn install -pl events-contracts,notification-service -am -DskipTests
+#   $env:SPRING_PROFILES_ACTIVE='local'; mvn -pl notification-service spring-boot:run
+# If port 8084 is busy, stop the other process or set SERVER_PORT=8085
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:devconnect_notification;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  flyway:
+    enabled: false
+  h2:
+    console:
+      enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+
+app:
+  kafka:
+    enabled: ${KAFKA_ENABLED:false}
